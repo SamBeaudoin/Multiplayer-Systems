@@ -4,6 +4,7 @@ This RPG data streaming assignment was created by Fernando Restituto.
 Pixel RPG characters created by Sean Browning.
 */
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -78,12 +79,14 @@ static public class AssignmentPart1
     {
         StreamWriter writer = new StreamWriter("PlayerParty.txt");
 
+        Debug.Log("Party Saved!");
+
         foreach (PartyCharacter pc in GameContent.partyCharacters)
         {
-            Debug.Log("PC class id == " + pc.classID);
-
+            // Save Character stats and ID on first line
             writer.Write(pc.classID + " " + pc.health + " " + pc.mana + " " + pc.strength + " " + pc.agility + " " + pc.wisdom +"\n");
 
+            // Save Character Equipment on next line
             int count = pc.equipment.Count;
 
             for (int i = 0; i < count; i++)
@@ -100,7 +103,52 @@ static public class AssignmentPart1
     static public void LoadPartyButtonPressed()
     {
         Debug.Log("Load Pressed!");
-        //GameContent.partyCharacters.Clear();
+        
+        GameContent.partyCharacters.Clear();
+
+        StreamReader reader = new StreamReader("PlayerParty.txt");
+
+        // Variables for split String Data
+        string line;
+        int ID;
+        int health;
+        int mana;
+        int strength;
+        int agility;
+        int wisdom;
+
+    PartyCharacter NewCharacter;
+
+        while ((line = reader.ReadLine()) != null)
+        {
+            // Split data being stored
+            string[] data = line.Split(" ");
+
+            // Convert Data to Integers
+            ID = Convert.ToInt32(data[0]);
+            health = Convert.ToInt32(data[1]);
+            mana = Convert.ToInt32(data[2]);
+            strength = Convert.ToInt32(data[3]);
+            agility = Convert.ToInt32(data[4]);
+            wisdom = Convert.ToInt32(data[5]);
+
+            // Create New Character
+            NewCharacter = new PartyCharacter(ID, health, mana, strength, agility, wisdom);
+
+            // Read/Split Equpiment Data
+            line = reader.ReadLine();
+            data = line.Split(" ");
+
+            // Loop Through Saved Equipment, Ignoring Empty Value at End Of File
+            for (int i = 0; i < data.Length - 1; i++)
+            {
+                // Add Equipment to New Character
+                NewCharacter.equipment.AddFirst(Convert.ToInt32(data[i]));
+            }
+
+            // Add Loaded Character to Pool
+            GameContent.partyCharacters.AddLast(NewCharacter);
+        }
 
         GameContent.RefreshUI();
 
