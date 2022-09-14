@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 #region Assignment Instructions
@@ -168,7 +169,7 @@ static public class AssignmentPart1
 //  This will enable the needed UI/function calls for your to proceed with your assignment.
 static public class AssignmentConfiguration
 {
-    public const int PartOfAssignmentThatIsInDevelopment = 1;
+    public const int PartOfAssignmentThatIsInDevelopment = 2;
 }
 
 /*
@@ -231,6 +232,58 @@ static public class AssignmentPart2
 
     static public void SavePartyButtonPressed()
     {
+        InputField field = GameObject.FindObjectOfType<InputField>();
+        
+        Debug.Log("Party Name: " + field.text);
+
+        StreamReader reader;
+
+        // Test if file exists
+        try
+        {
+            reader = new StreamReader("PartyNames.txt");
+        }
+        catch (Exception e)
+        {
+            // if file does not, create file and add party
+            Debug.Log("File Not Found!");
+            Debug.Log("Creating File!");
+            StreamWriter writer0 = new StreamWriter("PartyNames.txt");
+            writer0.WriteLine(field.text);
+            writer0.Close();
+            return;
+        }
+
+        // File exists with previous data saved
+        reader = new StreamReader("PartyNames.txt");
+
+        string line;
+        LinkedList<string> data = new LinkedList<string>();
+
+
+        // Iterate through file saving previous team names
+        while ((line = reader.ReadLine()) != null)
+        {
+            data.AddLast(line);
+            
+        }
+        reader.Close();
+
+        // Add newest party to data
+        data.AddLast(field.text);
+
+        
+        
+        StreamWriter writer = new StreamWriter("PartyNames.txt");
+
+        // Proccess saved data list into file
+        while((line = data.First.Value) != null)
+        {
+            writer.WriteLine(line);
+            data.RemoveFirst();
+        }
+        writer.Close();
+
         GameContent.RefreshUI();
     }
 
