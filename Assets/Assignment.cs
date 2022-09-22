@@ -118,7 +118,7 @@ static public class AssignmentPart1
         int agility;
         int wisdom;
 
-    PartyCharacter NewCharacter;
+        PartyCharacter NewCharacter;
 
         while ((line = reader.ReadLine()) != null)
         {
@@ -217,25 +217,6 @@ static public class AssignmentPart2
 
     static public List<string> GetListOfPartyNames()
     {
-        return new List<string>() {
-            "sample 1",
-            "sample 2",
-            "sample 3"
-        };
-
-    }
-
-    static public void LoadPartyDropDownChanged(string selectedName)
-    {
-        GameContent.RefreshUI();
-    }
-
-    static public void SavePartyButtonPressed()
-    {
-        InputField field = GameObject.FindObjectOfType<InputField>();
-        
-        Debug.Log("Party Name: " + field.text);
-
         StreamReader reader;
 
         // Test if file exists
@@ -245,17 +226,131 @@ static public class AssignmentPart2
         }
         catch (Exception e)
         {
-            // if file does not, create file and add party
-            Debug.Log("File Not Found!");
-            Debug.Log("Creating File!");
-            StreamWriter writer0 = new StreamWriter("PartyNames.txt");
-            writer0.WriteLine(field.text);
-            writer0.Close();
-            return;
+            return new List<string>() { "List Is Empty" };
         }
 
-        // File exists with previous data saved
-        reader = new StreamReader("PartyNames.txt");
+        List<string> data = new List<string>();
+        string line;
+
+        // If File Exists
+        // Proccess saved file into list for displaying
+        while ((line = reader.ReadLine()) != null)
+        {
+            data.Add(line);
+        }
+
+        reader.Close();
+
+
+        return data;
+
+    }
+
+    static public void LoadPartyDropDownChanged(string selectedName)
+    {
+        Debug.Log("Loading Party: " + selectedName);
+
+        GameContent.currentlyLoadedParty = selectedName;
+
+        StreamReader reader = new StreamReader("PartyNames.txt");
+
+        // Read List of Party Names
+        LinkedList<string> data = new LinkedList<string>();
+        string line;
+
+        while ((line = reader.ReadLine()) != null)
+        {
+            data.AddLast(line);
+        }
+
+        // Check which party index is to be loaded
+        int indexCount = 1;
+
+        for (; data.First.Value != selectedName; data.RemoveFirst())
+        {
+            indexCount++;
+        }
+        reader.Close();
+
+        GameContent.partyCharacters.Clear();
+
+        reader = new StreamReader("Party" + (indexCount) + ".txt");
+
+        // Variables for split String Data
+        int ID;
+        int health;
+        int mana;
+        int strength;
+        int agility;
+        int wisdom;
+
+        PartyCharacter NewCharacter;
+
+        while ((line = reader.ReadLine()) != null)
+        {
+            // Split data being stored
+            string[] characterData = line.Split(" ");
+
+            // Convert Data to Integers
+            ID = Convert.ToInt32(characterData[0]);
+            health = Convert.ToInt32(characterData[1]);
+            mana = Convert.ToInt32(characterData[2]);
+            strength = Convert.ToInt32(characterData[3]);
+            agility = Convert.ToInt32(characterData[4]);
+            wisdom = Convert.ToInt32(characterData[5]);
+
+            // Create New Character
+            NewCharacter = new PartyCharacter(ID, health, mana, strength, agility, wisdom);
+
+            // Read/Split Equpiment Data
+            line = reader.ReadLine();
+            characterData = line.Split(" ");
+
+            // Loop Through Saved Equipment, Ignoring Empty Value at End Of File
+            for (int i = 0; i < characterData.Length - 1; i++)
+            {
+                // Add Equipment to New Character
+                NewCharacter.equipment.AddFirst(Convert.ToInt32(characterData[i]));
+            }
+
+            // Add Loaded Character to Pool
+            GameContent.partyCharacters.AddLast(NewCharacter);
+        }
+
+        GameContent.RefreshUI();
+    }
+
+    static public void SavePartyButtonPressed()
+    {
+        InputField field = GameObject.FindObjectOfType<InputField>();
+
+        string partyName = field.text;
+        GameContent.currentlyLoadedParty = partyName;
+
+        Debug.Log("Party Name: " + partyName);
+
+        StreamReader tempReader;
+        StreamWriter tempWriter;
+
+        // Test if file exists
+        try
+        {
+            tempReader = new StreamReader("PartyNames.txt");
+            tempReader.Close();
+            tempReader = null;
+        }
+        catch (Exception e)
+        {
+            // if file does not exist, create file
+            Debug.Log("File Not Found!");
+            Debug.Log("Creating File!");
+            tempWriter = new StreamWriter("PartyNames.txt");
+            tempWriter.Close();
+            tempWriter = null;
+        }
+
+        // Read previously saved data if any
+        StreamReader reader = new StreamReader("PartyNames.txt");
 
         string line;
         LinkedList<string> data = new LinkedList<string>();
@@ -265,23 +360,45 @@ static public class AssignmentPart2
         while ((line = reader.ReadLine()) != null)
         {
             data.AddLast(line);
-            
+
         }
         reader.Close();
 
         // Add newest party to data
-        data.AddLast(field.text);
+        data.AddLast(partyName);
 
-        
-        
         StreamWriter writer = new StreamWriter("PartyNames.txt");
+        int dataCount = data.Count;
 
         // Proccess saved data list into file
-        while((line = data.First.Value) != null)
+        for (int i = 0; i < dataCount; i++)
         {
-            writer.WriteLine(line);
+            writer.WriteLine(data.First.Value);
             data.RemoveFirst();
         }
+
+        writer.Close();
+
+        // Create New File for party characters
+        writer = new StreamWriter("Party" + dataCount + ".txt");
+
+        // Save party members
+        foreach (PartyCharacter pc in GameContent.partyCharacters)
+        {
+            // Save Character stats and ID on first line
+            writer.Write(pc.classID + " " + pc.health + " " + pc.mana + " " + pc.strength + " " + pc.agility + " " + pc.wisdom + "\n");
+
+            // Save Character Equipment on next line
+            int count = pc.equipment.Count;
+
+            for (int j = 0; j < count; j++)
+            {
+                writer.Write(pc.equipment.First.Value + " ");
+                pc.equipment.RemoveFirst();
+            }
+            writer.Write("\n");
+        }
+
         writer.Close();
 
         GameContent.RefreshUI();
@@ -289,14 +406,88 @@ static public class AssignmentPart2
 
     static public void NewPartyButtonPressed()
     {
-
+        // Not sure when this is called?
+        Debug.Log("New Party Button Pressed!");
     }
 
     static public void DeletePartyButtonPressed()
     {
+        // Check to see if current party is Saved
+        if (GameContent.currentlyLoadedParty == "")
+        {
+            return;
+        }
 
+        // Read List of Party Names
+        StreamReader reader = new StreamReader("PartyNames.txt");
+        LinkedList<string> data = new LinkedList<string>();
+        string line;
+
+        int NumberOfParties = 0;
+        int indexCount = 1;
+        bool partyIndexFound = false;
+
+        while ((line = reader.ReadLine()) != null)
+        {
+            // Aquire All Party Names
+            data.AddFirst(line);
+            NumberOfParties++;
+
+            // Find Index of Party to be Deleted
+            if (partyIndexFound)
+                continue;
+
+            indexCount++;
+
+            if (line == GameContent.currentlyLoadedParty)
+            {
+                partyIndexFound = true;
+                data.RemoveFirst();
+            }
+        }
+        reader.Close();
+
+        // Re-Write Party Names file
+        StreamWriter writer = new StreamWriter("PartyNames.txt");
+
+        while (data.Last != null)
+        {
+            writer.WriteLine(data.Last.Value);
+            data.RemoveLast();
+        }
+        writer.Close();
+
+        // When Deleting only One party
+        if (NumberOfParties == 1)
+        {
+            File.Delete("Party1.txt");
+            Debug.Log("Single Party Deleted");
+            return;
+        }
+
+        // Re-Order previously saved party files
+
+        for (int i = indexCount; i <= NumberOfParties; i++)
+        {
+            reader = new StreamReader("Party" + i + ".txt");
+            while ((line = reader.ReadLine()) != null)
+            {
+                data.AddLast(line);
+            }
+            reader.Close();
+
+            int offset = 1;
+            writer = new StreamWriter("Party" + (i - offset) + ".txt");
+            while(data.Last != null)
+            {
+                writer.WriteLine(data.First.Value);
+                data.RemoveFirst();
+            }
+            writer.Close();
+        }
+        // delete last empty file
+        File.Delete("Party" + NumberOfParties + ".txt");
     }
-
 }
 
 #endregion

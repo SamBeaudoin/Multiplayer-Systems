@@ -7,6 +7,8 @@ static public class GameContent
 {
     static GameObject systemManager;
 
+    public static string currentlyLoadedParty = "";
+
     public static LinkedList<PartyCharacter> partyCharacters;
 
     static public class CharacterClassID
@@ -83,6 +85,7 @@ static public class GameContent
     static public void RerollParty()
     {
         GameContent.partyCharacters = new LinkedList<PartyCharacter>();
+        GameContent.currentlyLoadedParty = "";
 
         for (int i = 0; i < Random.Range(1, 5); i++)
         {
