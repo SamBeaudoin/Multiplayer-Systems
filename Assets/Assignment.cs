@@ -316,6 +316,7 @@ static public class AssignmentPart2
             // Add Loaded Character to Pool
             GameContent.partyCharacters.AddLast(NewCharacter);
         }
+        reader.Close();
 
         GameContent.RefreshUI();
     }
@@ -412,7 +413,7 @@ static public class AssignmentPart2
 
     static public void DeletePartyButtonPressed()
     {
-        // Check to see if current party is Saved
+        // Check to see if current party is a Saved Party
         if (GameContent.currentlyLoadedParty == "")
         {
             return;
@@ -424,7 +425,7 @@ static public class AssignmentPart2
         string line;
 
         int NumberOfParties = 0;
-        int indexCount = 1;
+        int indexCount = 0;
         bool partyIndexFound = false;
 
         while ((line = reader.ReadLine()) != null)
@@ -441,17 +442,28 @@ static public class AssignmentPart2
 
             if (line == GameContent.currentlyLoadedParty)
             {
+                // Remove party name from list
                 partyIndexFound = true;
                 data.RemoveFirst();
             }
         }
         reader.Close();
 
-        // Re-Write Party Names file
+        // Re-Write Party Names file replacing the deleted party name with the last saved party
         StreamWriter writer = new StreamWriter("PartyNames.txt");
+
+        int count = 0;
 
         while (data.Last != null)
         {
+            count++;
+            if(count == indexCount)
+            {
+                writer.WriteLine(data.First.Value);
+                data.RemoveFirst();
+                continue;
+            }
+
             writer.WriteLine(data.Last.Value);
             data.RemoveLast();
         }
@@ -465,28 +477,19 @@ static public class AssignmentPart2
             return;
         }
 
-        // Re-Order previously saved party files
-
-        for (int i = indexCount; i <= NumberOfParties; i++)
+        // When Deleting very last party
+        if(indexCount == NumberOfParties)
         {
-            reader = new StreamReader("Party" + i + ".txt");
-            while ((line = reader.ReadLine()) != null)
-            {
-                data.AddLast(line);
-            }
-            reader.Close();
-
-            int offset = 1;
-            writer = new StreamWriter("Party" + (i - offset) + ".txt");
-            while(data.Last != null)
-            {
-                writer.WriteLine(data.First.Value);
-                data.RemoveFirst();
-            }
-            writer.Close();
+            File.Delete("Party" + NumberOfParties + ".txt");
+            return;
         }
-        // delete last empty file
-        File.Delete("Party" + NumberOfParties + ".txt");
+
+
+        // delete party's character stats
+        File.Delete("Party" + indexCount + ".txt");
+
+        // Move last party saved to deleted party's position
+        File.Move("Party" + NumberOfParties + ".txt", "Party" + indexCount + ".txt");
     }
 }
 
